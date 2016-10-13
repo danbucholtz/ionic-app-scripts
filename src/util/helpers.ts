@@ -2,7 +2,9 @@ import { outputJson, readFile, readJsonSync, writeFile } from 'fs-extra';
 import { BuildError, Logger } from './logger';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { TsFiles } from './interfaces';
 
+let tsFiles: TsFiles;
 
 export const objectAssign = (Object.assign) ? Object.assign : function (target: any, source: any) {
   const output = Object(target);
@@ -89,4 +91,13 @@ export function getModulePathsCache(): string[] {
     Logger.debug(`Cached module paths not found: ${modulesCachePath}`);
   }
   return modulePaths;
+}
+
+
+export function cacheTranspiledTsFiles(inTsFiles: TsFiles) {
+  tsFiles = inTsFiles;
+}
+
+export function getCachedTranspiledTsFiles() {
+  return tsFiles;
 }

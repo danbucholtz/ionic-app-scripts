@@ -52,7 +52,7 @@ function buildProd(context: BuildContext) {
 
   }).then(() => {
     // js minify can kick off right away
-    const jsPromise = minifyJs(context);
+    //const jsPromise = minifyJs(context);
 
     // sass needs to finish, then css minify can run when sass is done
     const sassPromise = sass(context).then(() => {
@@ -60,7 +60,7 @@ function buildProd(context: BuildContext) {
     });
 
     return Promise.all([
-      jsPromise,
+      //jsPromise,
       sassPromise
     ]);
 

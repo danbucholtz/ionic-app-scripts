@@ -3,7 +3,7 @@ import { BuildError } from './util/logger';
 import { fillConfigDefaults, generateContext, getUserConfigFile } from './util/config';
 import { rollup, rollupUpdate, getRollupConfig } from './rollup';
 import { transpile, transpileUpdate } from './transpile';
-import { webpack } from './webpack';
+import { webpack, webpackUpdate } from './webpack';
 
 
 export function bundle(context?: BuildContext, configFile?: string) {
@@ -18,7 +18,11 @@ export function bundle(context?: BuildContext, configFile?: string) {
 
 function createBundle(context: BuildContext, configFile: string, bundleConfig: BundleConfig) {
   if (bundleConfig.useWebpack) {
-    return webpack(context, configFile);
+    // TODO - get the attribute from config later
+    context.jsSourceMaps = true;
+    return transpile(context).then(tsFiles => {
+      return webpack(context, configFile, tsFiles);
+    });
   } else {
     // TODO - the config file is almost certainly wrong here in this context,
     // so we need to change how Rollup gets access to it
@@ -32,22 +36,26 @@ function createBundle(context: BuildContext, configFile: string, bundleConfig: B
 
 
 export function bundleUpdate(event: string, path: string, context: BuildContext) {
-  const configFile = getUserConfigFile(context, taskInfo, null/*configFile*/);
+  const configFile = getUserConfigFile(context, taskInfo, null);
   const bundleConfig: BundleConfig = fillConfigDefaults(configFile, taskInfo.defaultConfigFile);
-  if (bundleConfig.useWebpack) {
 
+  if (bundleConfig.useWebpack) {
+    // TODO - get the attribute from config later
+    context.jsSourceMaps = true;
   } else {
     const rollupConfig = getRollupConfig(context, null);
     context.jsSourceMaps = rollupConfig.sourceMap;
-
-    return transpileUpdate(event, path, context)
-      .then(tsFiles => {
-        return rollupUpdate(event, path, context, tsFiles);
-      })
-      .catch(err => {
-        throw new BuildError(err);
-      });
   }
+  return transpileUpdate(event, path, context).then(tsFiles => {
+    if (bundleConfig.useWebpack) {
+      return webpackUpdate(event, path, context, null, tsFiles);
+    } else {
+      return rollupUpdate(event, path, context, tsFiles);
+    }
+  })
+  .catch(err => {
+    throw new BuildError(err);
+  });
 }
 
 
